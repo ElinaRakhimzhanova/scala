@@ -1,5 +1,7 @@
 package week2
 
+import week2.startup.Kek
+
 // object singleton
 object HelloWorld extends App {
   val divisor = 0
@@ -89,5 +91,15 @@ object HelloWorld extends App {
   // x = x + 10 => nonsense
   // y = x + 10 // OK
   // (x - 3)(x - 2) = 0
+
+
+
+
+  Kek.transferClientMoney("12310", "87077777777", "daulet@gmail.com", "kaspi-91234", 10000)
+
+
+  Kek.transferClientMoney2("12310", "87077777777", "daulet@gmail.com", "91234", 10000)
+
+
 
 }
