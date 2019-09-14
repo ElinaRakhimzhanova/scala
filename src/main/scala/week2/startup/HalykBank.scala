@@ -13,6 +13,8 @@ case class HalykBank() extends BankClient {
     // TODO: account validation isDouble
 
     internalTransaction(sourceAccount.toDouble, destinationAccount.toDouble, BigDecimal(amount))
+
+    "FIXME"
   }
 
 }
