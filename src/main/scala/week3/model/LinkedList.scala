@@ -2,24 +2,24 @@ package week3.model
 
 
 // Algebraic Data Type: Sum type
-sealed trait LinkedList
+sealed trait LinkedList {
 
-case class Node(value: Int, var tail: LinkedList) extends LinkedList {
-  def append(num: Int): Unit = tail match {
+//  def append(num: Int): LinkedList = this match {
+//    case node: Node =>
+//      node.append(num)
+//    case LinkedListNil =>
+//      Node(num, LinkedListNil)
+//  }
+
+  def find(elem: Int): Option[LinkedList] = this match {
     case node: Node =>
-      node.append(num)
-    case LinkedListNil =>
-      tail = Node(num, LinkedListNil)
+      if (elem == node.value) Some(node) else node.tail.find(elem)
+    case LinkedListNil => None
   }
+}
 
-  def find(elem: Int): LinkedList =
-    if (value == elem) this
-    else {
-      tail match {
-        case node: Node => node.find(elem)
-        case LinkedListNil => LinkedListNil
-    }
-  }
+case class Node(value: Int, tail: LinkedList) extends LinkedList {
+
 }
 case object LinkedListNil extends LinkedList
 
