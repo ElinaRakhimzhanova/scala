@@ -121,7 +121,7 @@ object Boot extends App {
 
   val list1 = Node(1, Node(2, Node(3, Node(4, LinkedListNil))))
 
-  list1.append(5)
+//  list1.append(5)
   println(list1)
 
   println(list1.find(4))
