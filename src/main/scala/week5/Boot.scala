@@ -1,8 +1,9 @@
 package week5
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
 
 object Boot extends App {
 
@@ -134,12 +135,15 @@ object Boot extends App {
     }
   }
 
+  // BLOCKING
+  // ANTI-PATTERN
+  // val result3 = Await.result(resultFuture3, 5.seconds)
+
   // executed async
   resultFuture3.onComplete {
     case Success(value) => println(s"Future result: $value")
     case Failure(fail) => println(s"Future failed: ${fail.getMessage}")
   }
-
 
   Thread.sleep(1000)
 
@@ -156,5 +160,49 @@ object Boot extends App {
     case Failure(fail) => println(s"Future failed: ${fail.getMessage}")
   }
 
-  Thread.sleep(4000)
+  Thread.sleep(1000)
+
+  // TRY
+  val try1: Try[Int] = Try(190 / 0)
+
+  try {
+    val value = 190 / 0
+    println(s"Success: $value")
+  } catch {
+    case e: Throwable => println(s"Fail: ${e.getMessage}")
+  }
+
+  try1 match {
+    case Success(value) => println(s"Success: $value")
+    case Failure(failure) => println(s"Fail: ${failure.getMessage}")
+  }
+
+  // Either
+  val either1: Either[String, Int] = Right(90)
+  val either2: Either[String, Int] = Left("Wrong number") // instead of None in Option
+
+  val resultEither: Either[String, Int] = either1.flatMap(res1 => either2.map(res2 => res1 + res2))
+
+  resultEither match {
+    case Right(value) => println(s"Either right: $value")
+    case Left(error) => println(s"Either left: $error")
+  }
+
+
+
+  // Converting monads
+
+  // option => either
+  val either3: Either[String, Int] = opt2.toRight("Wrong number")
+
+  // either => option
+  val eitherToOpt = resultEither.toOption
+
+  // try => option
+  val tryToOption = try1.toOption
+
+  // option => try N/A
+
+  println(resultEither.map(x => x + 4).toOption.getOrElse(0))
+
 }
