@@ -21,11 +21,11 @@ class TestBot(manager: ActorRef) extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case TestCreate =>
-      manager ! MovieManager.CreateMovie(Movie("1", "Joker", Director("dir-1", "Todd", "Philips"), 2019))
+      manager ! MovieManager.CreateMovie(Movie("1", "Joker", Director("dir-1", "Todd", None, "Philips"), 2019))
 
     case TestConflict =>
-      manager ! MovieManager.CreateMovie(Movie("2", "Charlie's Angels", Director("dir-2", "Ivan", "Ivanov"), 2019))
-      manager ! MovieManager.CreateMovie(Movie("2", "Test Test", Director("dir-2", "Ivan", "Ivanov"), 2019))
+      manager ! MovieManager.CreateMovie(Movie("2", "Charlie's Angels", Director("dir-2", "Ivan", None, "Ivanov"), 2019))
+      manager ! MovieManager.CreateMovie(Movie("2", "Test Test", Director("dir-2", "Ivan", None, "Ivanov"), 2019))
 
     case TestRead =>
       manager ! MovieManager.ReadMovie("1")
