@@ -23,4 +23,13 @@ object Boot extends App {
   // test read
   testBot ! TestBot.TestRead
 
+  // test update
+  testBot ! TestBot.TestUpdate
+
+  // test delete
+  testBot ! TestBot.TestDelete
+
+  // test not found movie
+  testBot ! TestBot.TestNotFound
+
 }

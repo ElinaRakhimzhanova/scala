@@ -49,17 +49,37 @@ class MovieManager extends Actor with ActorLogging {
     case msg: ReadMovie =>
       movies.get(msg.id) match {
         case Some(movie) =>
-          // TODO: logs
+          log.info(s"Movie with ID: {} exists.", movie.id)
           sender() ! movie
 
         case None =>
-          // TODO: logs
+          log.warning(s"Movie with ID: ${msg.id} does not exists.")
           sender() ! ErrorResponse(404, s"Movie with ID: ${msg.id} not found.")
       }
 
-    // TODO: UpdateMovie
+    case UpdateMovie(movie) =>
+      movies.get(movie.id) match {
+        case Some(movie) =>
+          movies = movies - movie.id + (movie.id -> movie)
+          log.info(s"Movie with ID: {} is updated.", movie.id)
+          sender() ! movie
 
-    // TODO: DeleteMovie
+        case None =>
+          log.info(s"Movie with ID: {} cannot be updated because it does not exists.", movie.id)
+          sender() ! ErrorResponse(404, s"Movie with ID: ${movie.id} not found.")
+      }
+
+    case msg: DeleteMovie =>
+      movies.get(msg.id) match {
+        case Some(movie) =>
+          log.info(s"Movie with ID: {} is deleted.", msg.id)
+          movies = movies - msg.id
+          sender() ! movie
+
+        case None =>
+          log.info(s"Movie with ID: {} cannot be deleted because it does not exists.", msg.id)
+          sender() ! ErrorResponse(404, s"Movie with ID: ${msg.id} not found.")
+      }
   }
 
   def randomInt() =
