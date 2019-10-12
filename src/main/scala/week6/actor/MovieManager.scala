@@ -38,23 +38,23 @@ class MovieManager extends Actor with ActorLogging {
       movies.get(movie.id) match {
         case Some(existingMovie) =>
           log.warning(s"Could not create a movie with ID: ${movie.id} because it already exists.")
-          sender() ! ErrorResponse(409, s"Movie with ID: ${movie.id} already exists.")
+          sender() ! Left(ErrorResponse(409, s"Movie with ID: ${movie.id} already exists."))
 
         case None =>
           movies = movies + (movie.id -> movie)
           log.info("Movie with ID: {} created.", movie.id)
-          sender() ! SuccessfulResponse(201, s"Movie with ID: ${movie.id} created.")
+          sender() ! Right(SuccessfulResponse(201, s"Movie with ID: ${movie.id} created."))
       }
 
     case msg: ReadMovie =>
       movies.get(msg.id) match {
         case Some(movie) =>
           log.info(s"Movie with ID: {} exists.", movie.id)
-          sender() ! movie
+          sender() ! Right(movie)
 
         case None =>
           log.warning(s"Movie with ID: ${msg.id} does not exists.")
-          sender() ! ErrorResponse(404, s"Movie with ID: ${msg.id} not found.")
+          sender() ! Left(ErrorResponse(404, s"Movie with ID: ${msg.id} not found."))
       }
 
     case UpdateMovie(movie) =>
@@ -62,11 +62,11 @@ class MovieManager extends Actor with ActorLogging {
         case Some(movie) =>
           movies = movies - movie.id + (movie.id -> movie)
           log.info(s"Movie with ID: {} is updated.", movie.id)
-          sender() ! movie
+          sender() ! Right(movie)
 
         case None =>
           log.info(s"Movie with ID: {} cannot be updated because it does not exists.", movie.id)
-          sender() ! ErrorResponse(404, s"Movie with ID: ${movie.id} not found.")
+          sender() ! Left(ErrorResponse(404, s"Movie with ID: ${movie.id} not found."))
       }
 
     case msg: DeleteMovie =>
@@ -74,11 +74,11 @@ class MovieManager extends Actor with ActorLogging {
         case Some(movie) =>
           log.info(s"Movie with ID: {} is deleted.", msg.id)
           movies = movies - msg.id
-          sender() ! movie
+          sender() ! Right(movie)
 
         case None =>
           log.info(s"Movie with ID: {} cannot be deleted because it does not exists.", msg.id)
-          sender() ! ErrorResponse(404, s"Movie with ID: ${msg.id} not found.")
+          sender() ! Left(ErrorResponse(404, s"Movie with ID: ${msg.id} not found."))
       }
   }
 

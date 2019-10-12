@@ -25,14 +25,14 @@ class TestBot(manager: ActorRef) extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case TestCreate =>
-      manager ! MovieManager.CreateMovie(Movie("1", "Joker", Director("dir-1", "Todd", "Philips"), 2019))
-      manager ! MovieManager.CreateMovie(Movie("4", "Harry Potter", Director("dir-4", "David", "Yates"), 2016))
-      manager ! MovieManager.CreateMovie(Movie("7", "1+1", Director("dir-5", "Olivier", "Nakache"), 2011))
+      manager ! MovieManager.CreateMovie(Movie("1", "Joker", Director("dir-1", "Todd", None, "Philips"), 2019))
+      manager ! MovieManager.CreateMovie(Movie("4", "Harry Potter", Director("dir-4", "David", None , "Yates"), 2016))
+      manager ! MovieManager.CreateMovie(Movie("7", "1+1", Director("dir-5", "Olivier", None, "Nakache"), 2011))
 
 
     case TestConflict =>
-      manager ! MovieManager.CreateMovie(Movie("2", "Charlie's Angels", Director("dir-2", "Ivan", "Ivanov"), 2019))
-      manager ! MovieManager.CreateMovie(Movie("2", "Test Test", Director("dir-2", "Ivan", "Ivanov"), 2019))
+      manager ! MovieManager.CreateMovie(Movie("2", "Charlie's Angels", Director("dir-2", "Ivan", None, "Ivanov"), 2019))
+      manager ! MovieManager.CreateMovie(Movie("2", "Test Test", Director("dir-2", "Ivan", None, "Ivanov"), 2019))
 
 //      manager ! MovieManager.UpdateMovie(Movie("2", "Test Test", Director("dir-2", "Ivan", "Ivanov"), 2019))
 //      manager ! MovieManager.UpdateMovie(Movie("2", "Test Test", Director("dir-2", "Ivan", "Ivanov"), 2019))
@@ -41,15 +41,14 @@ class TestBot(manager: ActorRef) extends Actor with ActorLogging {
       manager ! MovieManager.ReadMovie("1")
 
     case TestUpdate =>
-      manager ! MovieManager.UpdateMovie(Movie("4", "Harry Potter", Director("dir-4", "David", "Yates"), 2014))
+      manager ! MovieManager.UpdateMovie(Movie("4", "Harry Potter", Director("dir-4", "David", None, "Yates"), 2014))
 
     case TestDelete =>
       manager ! MovieManager.DeleteMovie("7")
 
     case TestNotFound =>
       manager ! MovieManager.ReadMovie("3")
-      manager ! MovieManager.UpdateMovie(Movie("6", "Test Test", Director("dir-2", "Ivan", "Ivanov"), 2019))
-      manager ! MovieManager.UpdateMovie(Movie("5", "Test Test", Director("dir-2", "Ivan", "Ivanov"), 2019))
+      manager ! MovieManager.UpdateMovie(Movie("5", "Test Test", Director("dir-2", "Ivan", None, "Ivanov"), 2019))
       manager ! MovieManager.DeleteMovie("8")
 
     case SuccessfulResponse(status, msg) =>
@@ -60,7 +59,5 @@ class TestBot(manager: ActorRef) extends Actor with ActorLogging {
 
     case movie: Movie =>
       log.info("Received movie: [{}]", movie)
-
-      // TODO: add tests
   }
 }
