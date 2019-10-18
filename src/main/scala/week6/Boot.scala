@@ -25,7 +25,6 @@ object Boot extends App with SprayJsonSerializer {
   val movieManager = system.actorOf(MovieManager.props(), "movie-manager")
 
 
-/*
   val route =
     path("healthcheck") {
       get {
@@ -34,50 +33,65 @@ object Boot extends App with SprayJsonSerializer {
         }
       }
     } ~
-    pathPrefix("kbtu-cinema") {
-      path("movie" / Segment) { movieId =>
-        get {
-          complete {
-            (movieManager ? MovieManager.ReadMovie(movieId)).mapTo[Either[ErrorResponse, Movie]]
-          }
-        }
-      } ~
-      path("movie") {
-        post {
-          entity(as[Movie]) { movie =>
+      pathPrefix("kbtu-cinema") {
+        path("movie" / Segment) { movieId =>
+          get {
             complete {
-              (movieManager ? MovieManager.CreateMovie(movie)).mapTo[Either[ErrorResponse, SuccessfulResponse]]
+              (movieManager ? MovieManager.ReadMovie(movieId)).mapTo[Either[ErrorResponse, Movie]]
             }
           }
-        }
+        } ~
+          path("movie") {
+            post {
+              entity(as[Movie]) { movie =>
+                complete {
+                  (movieManager ? MovieManager.CreateMovie(movie)).mapTo[Either[ErrorResponse, SuccessfulResponse]]
+                }
+              }
+            }
+          } ~
+          path("movie" / Segment) { movieId =>
+            delete {
+              complete {
+                (movieManager ? MovieManager.DeleteMovie(movieId)).mapTo[Either[ErrorResponse, Movie]]
+              }
+            }
+          } ~
+          path("movie") {
+            put {
+              entity(as[Movie]) { movie =>
+                complete {
+                  (movieManager ? MovieManager.UpdateMovie(movie)).mapTo[Either[ErrorResponse, SuccessfulResponse]]
+                }
+              }
+            }
+          }
       }
-    }
 
-  val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8080)*/
-
-
+  val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8080)
 
   val testBot = system.actorOf(TestBot.props(movieManager), "test-bot")
-
 
 
   // test create
   testBot ! TestBot.TestCreate
 
-  // test conflict
-  testBot ! TestBot.TestConflict
-  testBot ! "bla-bla"
+    /*
+    // test conflict
+    testBot ! TestBot.TestConflict
+    testBot ! "bla-bla"
 
-  // test read
-  testBot ! TestBot.TestRead
+    // test read
+    testBot ! TestBot.TestRead
 
-  // test update
-  testBot ! TestBot.TestUpdate
+    // test update
+    testBot ! TestBot.TestUpdate
 
-  // test delete
-  testBot ! TestBot.TestDelete
+    // test delete
+    testBot ! TestBot.TestDelete
 
-  // test not found movie
-  testBot ! TestBot.TestNotFound
+    // test not found movie
+    testBot ! TestBot.TestNotFound
+    */
 
 }
