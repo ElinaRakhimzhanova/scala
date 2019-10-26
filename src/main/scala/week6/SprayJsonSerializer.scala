@@ -1,6 +1,6 @@
 package week6
 
-import spray.json.DefaultJsonProtocol
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 import week6.model.{Director, ErrorResponse, Movie, SuccessfulResponse}
 
 // DefaultJsonProtocol is responsible for default formats:
@@ -8,9 +8,9 @@ import week6.model.{Director, ErrorResponse, Movie, SuccessfulResponse}
 
 trait SprayJsonSerializer extends DefaultJsonProtocol {
   // custom formats
-  implicit val directorFormat = jsonFormat4(Director)
-  implicit val movieFormat = jsonFormat4(Movie)
+  implicit val directorFormat: RootJsonFormat[Director] = jsonFormat4(Director)
+  implicit val movieFormat: RootJsonFormat[Movie] = jsonFormat4(Movie)
 
-  implicit val successfulResponse = jsonFormat2(SuccessfulResponse)
-  implicit val errorResponse = jsonFormat2(ErrorResponse)
+  implicit val successfulResponse: RootJsonFormat[SuccessfulResponse] = jsonFormat2(SuccessfulResponse)
+  implicit val errorResponse: RootJsonFormat[ErrorResponse] = jsonFormat2(ErrorResponse)
 }
