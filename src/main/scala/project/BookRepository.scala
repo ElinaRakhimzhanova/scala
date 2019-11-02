@@ -1,6 +1,6 @@
 package project
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, Props}
 import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.http.{HttpClient, RequestFailure, RequestSuccess}
 import com.sksamuel.elastic4s.http.ElasticDsl._
@@ -11,7 +11,23 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
+object BookRepository {
+
+  def props(): Props = Props(new BookRepository)
+
+  case class CreateBook(book: Book)
+
+  case class ReadBook(id : String)
+
+  case class UpdateBook(book: Book)
+
+  case class DeleteBook(id: String)
+
+}
+
 class BookRepository extends Actor with ActorLogging with ElasticSerializer {
+
+  import BookRepository._
 
   val client = HttpClient(ElasticsearchClientUri("localhost", 9200))
 
@@ -30,71 +46,71 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
     }
   }
 
-  def createBook(book: Book): Unit = {
+    override def receive: Receive = {
 
-    //val book = Book("id-1", "Harry Potter", Author("dir-1", "Joan", "Rowling"), 2019, "fantasy")
+      case CreateBook(book) => {
+        //val book = Book("id-1", "Harry Potter", Author("dir-1", "Joan", "Rowling"), 2019, "fantasy")
+        val cmd = client.execute(indexInto("books" / "_doc").id("id-1").doc(book))
 
-    val cmd = client.execute(indexInto("books" / "_doc").id("id-1").doc(book))
+        cmd.onComplete {
+          case Success(value) =>
+            log.warning(s"Could not create a movie with ID: because it already exists.")
+            sender() ! SuccessfulResponse(201, s"Movie with ID: already exists.")
+            println(value)
 
-    cmd.onComplete {
-      case Success(value) =>
-        log.warning(s"Could not create a movie with ID: because it already exists.")
-        sender() ! SuccessfulResponse(201, s"Movie with ID: already exists.")
-        println(value)
+          case Failure(fail) =>
+            log.warning(s"Could not create a movie with ID: because it already exists.")
+            sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
+            println(fail.getMessage)
+          }
+      }
 
-      case Failure(fail) =>
-        log.warning(s"Could not create a movie with ID: because it already exists.")
-        sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
-        println(fail.getMessage)
-    }
-  }
-
-  def readBook(id : String): Unit = {
-    client.execute {
-      get(id).from("books" / "_doc")
-    }.onComplete {
-      case Success(either) =>
-        either.map ( e => e.result.to[Book] ).foreach { movie =>
-          log.warning(s"Could not create a movie with ID: because it already exists.")
-          sender() ! SuccessfulResponse(200, s"Movie with ID: already exists.")
-          println(movie)
+      case ReadBook(id) => {
+        client.execute {
+          get(id).from("books" / "_doc")
+        }.onComplete {
+          case Success(either) =>
+            either.map(e => e.result.to[Book]).foreach { movie =>
+              log.warning(s"Could not create a movie with ID: because it already exists.")
+              sender() ! SuccessfulResponse(200, s"Movie with ID: already exists.")
+              println(movie)
+            }
+          case Failure(fail) =>
+            log.warning(s"Could not create a movie with ID: because it already exists.")
+            sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
+            println(fail.getMessage)
         }
-      case Failure(fail) =>
-        log.warning(s"Could not create a movie with ID: because it already exists.")
-        sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
-        println(fail.getMessage)
+      }
+
+      case UpdateBook(book) => {
+        val cmd = client.execute(indexInto("books" / "_doc").id(book.id).doc(book))
+
+        cmd.onComplete {
+          case Success(value) =>
+            log.warning(s"Could not create a movie with ID: because it already exists.")
+            sender() ! SuccessfulResponse(200, s"Movie with ID: already exists.")
+            println(value)
+          case Failure(fail) =>
+            log.warning(s"Could not create a movie with ID: because it already exists.")
+            sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
+            println(fail.getMessage)
+        }
+      }
+
+      case DeleteBook(id) => {
+        client.execute {
+          get(id).from("books" / "_doc")
+        }.onComplete {
+          case Success(either) =>
+            log.warning(s"Could not create a movie with ID:  because it already exists.")
+            sender() ! SuccessfulResponse(200, s"Movie with ID:  already exists.")
+            either == null
+          case Failure(fail) =>
+            log.warning(s"Could not create a movie with ID: because it already exists.")
+            sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
+            println(fail.getMessage)
+        }
+      }
+
     }
-  }
-
-  def updateBook(book : Book): Unit = {
-    val cmd = client.execute(indexInto("books" / "_doc").id(book.id).doc(book))
-
-    cmd.onComplete {
-      case Success(value) =>
-        log.warning(s"Could not create a movie with ID: because it already exists.")
-        sender() ! SuccessfulResponse(200, s"Movie with ID: already exists.")
-        println(value)
-      case Failure(fail) =>
-        log.warning(s"Could not create a movie with ID: because it already exists.")
-        sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
-        println(fail.getMessage)
-    }
-  }
-
-  def deleteBook(id : String): Unit = {
-    client.execute {
-      get(id).from("books" / "_doc")
-    }.onComplete {
-      case Success(either) =>
-        log.warning(s"Could not create a movie with ID:  because it already exists.")
-        sender() ! SuccessfulResponse(200, s"Movie with ID:  already exists.")
-        either == null
-      case Failure(fail) =>
-        log.warning(s"Could not create a movie with ID: because it already exists.")
-        sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
-        println(fail.getMessage)
-    }
-  }
-
-  override def receive: Receive = ???
 }
