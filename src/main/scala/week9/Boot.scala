@@ -18,7 +18,6 @@ object Boot extends App with ElasticSerializer {
     val cmd: Future[Either[RequestFailure, RequestSuccess[CreateIndexResponse]]] =
       client.execute { createIndex("movies") }
 
-
     cmd.onComplete {
       case Success(value) =>
         value.foreach {requestSuccess =>
@@ -66,8 +65,8 @@ object Boot extends App with ElasticSerializer {
 
 
 
-  createMovie
-//  readMovie("id-1")
+  //createMovie
+  //readMovie("id-1")
 
 
 
