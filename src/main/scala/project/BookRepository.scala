@@ -5,7 +5,7 @@ import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.http.{HttpClient, RequestFailure, RequestSuccess}
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.http.index.CreateIndexResponse
-import project.model.Book
+import project.model.{Author, Book}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -46,21 +46,21 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
     }
   }
 
-    override def receive: Receive = {
+  def receive: Receive = {
 
-      case CreateBook(book) => {
-        //val book = Book("id-1", "Harry Potter", Author("dir-1", "Joan", "Rowling"), 2019, "fantasy")
-        val cmd = client.execute(indexInto("books" / "_doc").id("id-1").doc(book))
+      case CreateBook => {
+        val book = Book("id-1", "Harry Potter", Author("dir-1", "Joan", "Rowling"), 2019, "fantasy")
+        val cmd = client.execute(indexInto("books" / "_doc").id(book.id).doc(book))
 
         cmd.onComplete {
           case Success(value) =>
-            log.warning(s"Could not create a movie with ID: because it already exists.")
-            sender() ! SuccessfulResponse(201, s"Movie with ID: already exists.")
+            log.warning(s"Could not create a book with ID: because it already exists.")
+            sender() ! SuccessfulResponse(201, s"Book with ID: already exists.")
             println(value)
 
           case Failure(fail) =>
-            log.warning(s"Could not create a movie with ID: because it already exists.")
-            sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
+            log.warning(s"Could not create a book with ID: because it already exists.")
+            sender() ! ErrorResponse(409, s"Book with ID: already exists.")
             println(fail.getMessage)
           }
       }
@@ -70,14 +70,14 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
           get(id).from("books" / "_doc")
         }.onComplete {
           case Success(either) =>
-            either.map(e => e.result.to[Book]).foreach { movie =>
-              log.warning(s"Could not create a movie with ID: because it already exists.")
-              sender() ! SuccessfulResponse(200, s"Movie with ID: already exists.")
-              println(movie)
+            either.map(e => e.result.to[Book]).foreach { book =>
+              log.warning(s"Could not create a book with ID: because it already exists.")
+              sender() ! SuccessfulResponse(200, s"Book with ID: already exists.")
+              println(id)
             }
           case Failure(fail) =>
-            log.warning(s"Could not create a movie with ID: because it already exists.")
-            sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
+            log.warning(s"Could not create a book with ID: because it already exists.")
+            sender() ! ErrorResponse(409, s"Book with ID: already exists.")
             println(fail.getMessage)
         }
       }
@@ -87,27 +87,26 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
 
         cmd.onComplete {
           case Success(value) =>
-            log.warning(s"Could not create a movie with ID: because it already exists.")
-            sender() ! SuccessfulResponse(200, s"Movie with ID: already exists.")
+            log.warning(s"Could not create a book with ID: because it already exists.")
+            sender() ! SuccessfulResponse(200, s"Book with ID: already exists.")
             println(value)
           case Failure(fail) =>
-            log.warning(s"Could not create a movie with ID: because it already exists.")
-            sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
+            log.warning(s"Could not create a book with ID: because it already exists.")
+            sender() ! ErrorResponse(409, s"Book with ID: already exists.")
             println(fail.getMessage)
         }
       }
 
       case DeleteBook(id) => {
         client.execute {
-          get(id).from("books" / "_doc")
+          delete(id).from("books" / "_doc")
         }.onComplete {
           case Success(either) =>
-            log.warning(s"Could not create a movie with ID:  because it already exists.")
-            sender() ! SuccessfulResponse(200, s"Movie with ID:  already exists.")
-            either == null
+            log.warning(s"Could not create a book with ID:  because it already exists.")
+            sender() ! SuccessfulResponse(200, s"Book with ID:  already exists.")
           case Failure(fail) =>
-            log.warning(s"Could not create a movie with ID: because it already exists.")
-            sender() ! ErrorResponse(409, s"Movie with ID: already exists.")
+            log.warning(s"Could not delete a book with ID: because it does not exists.")
+            sender() ! ErrorResponse(409, s"Book with ID: ${id} does not exists.")
             println(fail.getMessage)
         }
       }

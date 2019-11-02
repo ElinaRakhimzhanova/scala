@@ -13,6 +13,8 @@ import scala.concurrent.ExecutionContextExecutor
 
 object Boot extends App with ElasticSerializer{
 
+  BookRepository.CreateBook
+
   implicit val system: ActorSystem = ActorSystem("book-service")
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val ec: ExecutionContextExecutor = system.dispatcher
