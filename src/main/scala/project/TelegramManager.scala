@@ -1,29 +1,38 @@
 package project
 
 import scala.util.{Failure, Success}
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, RequestEntity}
+import akka.stream.ActorMaterializer
+import com.typesafe.config.{Config, ConfigFactory}
 import libraryBot.TelegramMessage
+import org.slf4j.LoggerFactory
 
-object TelegramManager {
+import scala.concurrent.ExecutionContextExecutor
 
-    val logging = logging
-    val message: TelegramMessage = TelegramMessage(276182704, message)
+case class TelegramManager(message: TelegramMessage) extends Serializer {
 
-    val httpReq = Marshal(message).to[RequestEntity].flatMap { entity =>
-      val request = HttpRequest(HttpMethods.POST, s"https://api.telegram.org/bot929725600:AAEPwGlQKnCiR_NfoMp6IKLgR0sc5Ii6xlw/sendMessage", Nil, entity)
-      log.debug("Request: {}", request)
-      Http().singleRequest(request)
-    }
+  implicit val system: ActorSystem = ActorSystem()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-    httpReq.onComplete {
-      case Success(value) =>
-        log.info(s"Response: $value")
-        value.discardEntityBytes()
+  val config: Config = ConfigFactory.load()
+  val log = LoggerFactory.getLogger("TelegramManager")
 
-      case Failure(exception) =>
-        log.error("error")
-    }
+  val httpReq = Marshal(message).to[RequestEntity].flatMap { entity =>
+    val request = HttpRequest(HttpMethods.POST, s"https://api.telegram.org//sendMessage", Nil, entity)
+    log.debug("Request: {}", request)
+    Http().singleRequest(request)
+  }
+
+  httpReq.onComplete {
+    case Success(value) =>
+      log.info(s"Response: $value")
+      value.discardEntityBytes()
+
+    case Failure(exception) =>
+      log.error("error")
+  }
 }

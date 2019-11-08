@@ -1,6 +1,7 @@
-package libraryBot
+package project
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import libraryBot.TelegramMessage
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 trait Serializer extends DefaultJsonProtocol with SprayJsonSupport {

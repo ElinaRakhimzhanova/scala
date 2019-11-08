@@ -7,6 +7,7 @@ import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.LoggerFactory
+import project.Serializer
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
@@ -22,8 +23,8 @@ object Bot extends App with Serializer {
 
   //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = "http://akka.io"))
 
-  val token = config.getString("telegram.token") // token
-  log.info(s"Token: $token")
+  //val token = config.getString("telegram.token") // token
+  //log.info(s"Token: $token")
 
   val message: TelegramMessage = TelegramMessage(276182704, "Hello library")
 

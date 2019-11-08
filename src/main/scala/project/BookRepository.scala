@@ -34,6 +34,7 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
 
   import BookRepository._
 
+  val chat_id = -352088280
   val client = HttpClient(ElasticsearchClientUri("localhost", 9200))
 
   def createElasticIndex(): Unit = {
@@ -58,26 +59,6 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
 
   }
 
-//  val message: TelegramMessage = TelegramMessage(276182704, message)
-//
-//  val httpReq = Marshal(message).to[RequestEntity].flatMap { entity =>
-//    val request = HttpRequest(HttpMethods.POST, s"https://api.telegram.org/bot929725600:AAEPwGlQKnCiR_NfoMp6IKLgR0sc5Ii6xlw/sendMessage", Nil, entity)
-//    log.debug("Request: {}", request)
-//    Http().singleRequest(request)
-//  }
-//
-//  httpReq.onComplete {
-//    case Success(value) =>
-//      log.info(s"Response: $value")
-//      value.discardEntityBytes()
-//
-//    case Failure(exception) =>
-//      log.error("error")
-//  }
-
-  Thread.sleep(10000)
-
-
   def receive: Receive = {
 
     case CreateBook(book) => {
@@ -87,14 +68,15 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
 
       cmd.onComplete {
         case Success(value) =>
-          log.warning(s"New book with ID: ${book.id} created.")
-          sending(send, 201, s"Book with ID: ${book.id} already exists.", true)
+          log.info(s"New book with ID: ${book.id} created.")
+          sending(send, 201, s"Book with ID: ${book.id} is created.", true)
           //sender() ! SuccessfulResponse(201, s"Book with ID: ${book.id} already exists.")
+          var message = TelegramMessage(chat_id, s"Book with ID: ${book.id} is created.")
+          TelegramManager(message)
 
         case Failure(fail) =>
           log.warning(s"Could not create a book with ID: ${book.id} because it already exists.")
           sending(send, 409, s"Book with ID: ${book.id} already exists.", false)
-          TelegramManager()
           //sender() ! ErrorResponse(409, s"Book with ID: ${book.id} already exists.")
       }
     }
@@ -113,6 +95,8 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
                 e.result.to[Book]
                 log.info(s"Book with id ${id}.")
                 sending(send, 200, s"Book with ID: ${id}.", true)
+                var message = TelegramMessage(chat_id, s"Book with ID: ${id}.")
+                TelegramManager(message)
               }
               else {
                 log.info(s"Book with id ${id} is found but deleted.")
@@ -168,8 +152,8 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
         delete(id).from("books" / "_doc")
       }.onComplete {
         case Success(either) =>
-          either match {
-            case Right(e) =>
+//          either match {
+//            case Right(e) =>
 //              if(e.result.found) {
 //                e.result.to[Book]
 //                log.info(s"Book with id ${id} is deleted.")
@@ -179,13 +163,14 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
 //                log.info(s"Book with id ${id} is already deleted.")
 //                sending(send, 404, s"Book with ID: ${id} already deleted.", false)
 //              }
-            log.warning(s"Book with ID: ${id} successfully deleted.")
-            sending(send, 200, s"Book with ID: ${id} successfully deleted.", true)
+              log.warning(s"Book with ID: ${id} successfully deleted.")
+              sending(send, 200, s"Book with ID: ${id} successfully deleted.", true)
+              var message = TelegramMessage(chat_id, s"Book with ID: ${id} successfully deleted.")
+              TelegramManager(message)
 
-            case Left(error) =>
-              log.info(s"Book with id ${id} is deleted.")
-              sending(send, 404, s"Book with ID: ${id} does not exists.", false)
-          }
+//            case Left(error) =>
+//              log.info(s"Book with id ${id} is deleted.")
+//              sending(send, 404, s"Book with ID: ${id} does not exists.", false)
           //log.warning(s"Book with ID: ${id} successfully deleted.")
           //sending(send, 200, s"Book with ID: ${id} successfully deleted.", true)
           //sender() ! SuccessfulResponse(200, s"Book with ID: ${id} successfully deleted.")
@@ -195,6 +180,5 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
           //sender() ! ErrorResponse(404, s"Book with ID: ${id} does not exists.")
       }
     }
-
   }
 }
