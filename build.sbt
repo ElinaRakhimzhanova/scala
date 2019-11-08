@@ -10,6 +10,8 @@ lazy val elastic4sVersion = "6.2.10"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
+  "com.typesafe.akka" %% "akka-slf4j"   % akkaVersion,
+  "ch.qos.logback"    % "logback-classic" % "1.2.3",
   "com.typesafe.akka" %% "akka-http"   % "10.1.10",
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.10",
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
