@@ -14,7 +14,7 @@ import week6.model.{ErrorResponse, Movie, Response, SuccessfulResponse}
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 
-object Boot extends App with SprayJsonSerializer {
+object  Boot extends App with SprayJsonSerializer {
 
   implicit val system: ActorSystem = ActorSystem("movie-service")
   implicit val materializer: Materializer = ActorMaterializer()

@@ -1,10 +1,15 @@
 package project
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, RequestEntity}
 import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.http.{HttpClient, RequestFailure, RequestSuccess}
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.http.index.CreateIndexResponse
+import libraryBot.Bot.log
+import libraryBot.TelegramMessage
 import project.model.{Author, Book}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,97 +51,150 @@ class BookRepository extends Actor with ActorLogging with ElasticSerializer {
     }
   }
 
+  def sending(replyTo: ActorRef, status: Int, message: String, isSuccessful: Boolean) = {
+    if(isSuccessful)
+      replyTo ! Right(SuccessfulResponse(status, message))
+    replyTo ! Left(ErrorResponse(status, message))
+
+  }
+
+//  val message: TelegramMessage = TelegramMessage(276182704, message)
+//
+//  val httpReq = Marshal(message).to[RequestEntity].flatMap { entity =>
+//    val request = HttpRequest(HttpMethods.POST, s"https://api.telegram.org/bot929725600:AAEPwGlQKnCiR_NfoMp6IKLgR0sc5Ii6xlw/sendMessage", Nil, entity)
+//    log.debug("Request: {}", request)
+//    Http().singleRequest(request)
+//  }
+//
+//  httpReq.onComplete {
+//    case Success(value) =>
+//      log.info(s"Response: $value")
+//      value.discardEntityBytes()
+//
+//    case Failure(exception) =>
+//      log.error("error")
+//  }
+
+  Thread.sleep(10000)
+
+
   def receive: Receive = {
 
-      case CreateBook => {
-        myfun(sender(), id)
-        val book = Book("id-1", "Harry Potter", Author("dir-1", "Joan", "Rowling"), 2019, "fantasy")
-        val cmd = client.execute(indexInto("books" / "_doc").id(book.id).doc(book))
+    case CreateBook(book) => {
+      val send = sender()
+      //val book = Book("id-1", "Harry Potter", Author("dir-1", "Joan", "Rowling"), 2019, "fantasy")
+      val cmd = client.execute(indexInto("books" / "_doc").id(book.id).doc(book))
 
-        cmd.onComplete {
-          case Success(value) =>
-            log.warning(s"New book with ID: ${book.id} created.")
-            //sender() ! SuccessfulResponse(201, s"Book with ID: ${book.id} already exists.")
-            println(value)
+      cmd.onComplete {
+        case Success(value) =>
+          log.warning(s"New book with ID: ${book.id} created.")
+          sending(send, 201, s"Book with ID: ${book.id} already exists.", true)
+          //sender() ! SuccessfulResponse(201, s"Book with ID: ${book.id} already exists.")
 
-          case Failure(fail) =>
-            log.warning(s"Could not create a book with ID: ${book.id} because it already exists.")
-            //sender() ! ErrorResponse(409, s"Book with ID: ${book.id} already exists.")
-            println(fail.getMessage)
-          }
+        case Failure(fail) =>
+          log.warning(s"Could not create a book with ID: ${book.id} because it already exists.")
+          sending(send, 409, s"Book with ID: ${book.id} already exists.", false)
+          TelegramManager()
+          //sender() ! ErrorResponse(409, s"Book with ID: ${book.id} already exists.")
       }
-
-      case ReadBook(id) => {
-        myfun(sender(), id)
-
-        client.execute {
-          get(id).from("books" / "_doc")
-        }.onComplete {
-          case Success(either) =>
-            // pattern match either => case Right, case Left
-            // Right  e.result.found maybe false => no data found in Elastic
-            either.map(e => {
-              case Right(e.result.found) =>
-                if(true) {
-                  e.result.to[Book]
-                  log.info(s"Book with id ${id}.")
-                }
-                else {
-                  sender() ! ErrorResponse(404, s"Book with ID: ${id}.")
-                }
-              case Left(error) =>
-                println(error)
-            })
-              //either.map(e => e.result.to[Book]).foreach { book =>
-              log.warning(s"Book with id ${id}.")
-              sender() ! SuccessfulResponse(200, s"Book with ID: ${id}.")
-              //println(id)
-
-          case Failure(fail) =>
-            log.warning(s"Could not create a book with ID: ${id} because it already exists.")
-            //sender() ! ErrorResponse(409, s"Book with ID: already exists.")
-            println(fail.getMessage)
-        }
-      }
-
-      case UpdateBook(book) => {
-        myfun(sender(), book)
-        val cmd = client.execute(indexInto("books" / "_doc").id(book.id).doc(book))
-
-        cmd.onComplete {
-          case Success(value) =>
-            log.warning(s"Book with ID: ${book.id} updated.")
-            //sender() ! SuccessfulResponse(200, s"Book with ID: ${book.id} updated.")
-            println(value)
-          case Failure(fail) =>
-            log.warning(s"Could not update a book with ID: ${book.id} because it already does not exist.")
-            //sender() ! ErrorResponse(404, s"Book with ID: ${book.id} does not exist.")
-            println(fail.getMessage)
-        }
-      }
-
-      case DeleteBook(id) => {
-        myfun(sender(), id)
-        client.execute {
-          delete(id).from("books" / "_doc")
-        }.onComplete {
-          case Success(either) =>
-            log.warning(s"Book with ID: ${id} successfully deleted.")
-            //sender() ! SuccessfulResponse(200, s"Book with ID: ${id} successfully deleted.")
-          case Failure(fail) =>
-            log.warning(s"Could not delete a book with ID: because it does not exists.")
-            //sender() ! ErrorResponse(404, s"Book with ID: ${id} does not exists.")
-            println(fail.getMessage)
-        }
-      }
-
     }
 
-  def myfun(replyTo: ActorRef, id: String, book: Book) = {
+    // pattern match either => case Right, case Left
+    // Right  e.result.found maybe false => no data found in Elastic
+    case ReadBook(id) => {
+      val send = sender()
+      client.execute {
+        get(id).from("books" / "_doc")
+      }.onComplete {
+        case Success(either) =>
+          either match {
+            case Right(e) =>
+              if(e.result.found) {
+                e.result.to[Book]
+                log.info(s"Book with id ${id}.")
+                sending(send, 200, s"Book with ID: ${id}.", true)
+              }
+              else {
+                log.info(s"Book with id ${id} is found but deleted.")
+                sending(send, 404, s"Book with ID: ${id} does not exists actually.", false)
+              }
+            case Left(error) =>
+              log.info(s"Book with id ${id} is deleted.")
+              sending(send, 404, s"Book with ID: ${id} does not exists.", false)
+          }
+        case Failure(fail) =>
+          log.warning(s"Could not create a book with ID: ${id} because it already exists.")
+          sending(send, 409, s"Book with ID: ${id} already exists.", false)
+          //sender() ! ErrorResponse(409, s"Book with ID: already exists.")
+        }
+    }
 
-    replyTo ! Right(SuccessfulResponse(200, s"Book with ID: ${id} successfully deleted."))
-    replyTo ! Left(ErrorResponse(404, s"Book with ID: ${id} does not exists."))
+    case UpdateBook(book) => {
+      val send = sender()
+      val cmd = client.execute(indexInto("books" / "_doc").id(book.id).doc(book))
 
+      cmd.onComplete {
+        case Success(either) =>
+          either match {
+            case Right(e) =>
+//              if(e.result.found) {
+//                e.result.to[Book]
+//                log.info(s"Book with id ${book.id}.")
+//                sending(send, 200, s"Book with ID: ${book.id} is updated.", true)
+//              }
+//              else {
+//                log.info(s"Book with id ${book.id} is found but deleted.")
+//                sending(send, 404, s"Book with ID: ${book.id} does not exists actually.", false)
+//              }
+              log.warning(s"Book with ID: ${book.id} updated.")
+              sending(send, 200, s"Book with ID: ${book.id} updated.", true)
+            case Left(error) =>
+              log.info(s"Book with id ${book.id} is deleted.")
+              sending(send, 404, s"Book with ID: ${book.id} does not exists.", false)
+          }
+//          log.warning(s"Book with ID: ${book.id} updated.")
+//          sending(send, 200, s"Book with ID: ${book.id} updated.", true)
+          //sender() ! SuccessfulResponse(200, s"Book with ID: ${book.id} updated.")
+        case Failure(fail) =>
+          log.warning(s"Could not update a book with ID: ${book.id} because it already does not exist.")
+          sending(send, 404, s"Book with ID: ${book.id} does not exist.", false)
+          //sender() ! ErrorResponse(404, s"Book with ID: ${book.id} does not exist.")
+      }
+    }
+
+    case DeleteBook(id) => {
+      val send = sender()
+      client.execute {
+        delete(id).from("books" / "_doc")
+      }.onComplete {
+        case Success(either) =>
+          either match {
+            case Right(e) =>
+//              if(e.result.found) {
+//                e.result.to[Book]
+//                log.info(s"Book with id ${id} is deleted.")
+//                sending(send, 200, s"Book with ID: ${id}.", true)
+//              }
+//              else {
+//                log.info(s"Book with id ${id} is already deleted.")
+//                sending(send, 404, s"Book with ID: ${id} already deleted.", false)
+//              }
+            log.warning(s"Book with ID: ${id} successfully deleted.")
+            sending(send, 200, s"Book with ID: ${id} successfully deleted.", true)
+
+            case Left(error) =>
+              log.info(s"Book with id ${id} is deleted.")
+              sending(send, 404, s"Book with ID: ${id} does not exists.", false)
+          }
+          //log.warning(s"Book with ID: ${id} successfully deleted.")
+          //sending(send, 200, s"Book with ID: ${id} successfully deleted.", true)
+          //sender() ! SuccessfulResponse(200, s"Book with ID: ${id} successfully deleted.")
+        case Failure(fail) =>
+          log.warning(s"Could not delete a book with ID: because it does not exists.")
+          sending(send, 404, s"Book with ID: ${id} does not exists.", false)
+          //sender() ! ErrorResponse(404, s"Book with ID: ${id} does not exists.")
+      }
+    }
 
   }
 }
