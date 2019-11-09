@@ -1,4 +1,4 @@
-package project
+package project.serializers
 
 import com.sksamuel.elastic4s.{Hit, HitReader, Indexable}
 import project.model.Book

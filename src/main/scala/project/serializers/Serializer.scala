@@ -1,4 +1,4 @@
-package project
+package project.serializers
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import libraryBot.TelegramMessage

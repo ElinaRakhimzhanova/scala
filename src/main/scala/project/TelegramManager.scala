@@ -9,6 +9,7 @@ import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import libraryBot.TelegramMessage
 import org.slf4j.LoggerFactory
+import project.serializers.Serializer
 
 import scala.concurrent.ExecutionContextExecutor
 
@@ -21,8 +22,11 @@ case class TelegramManager(message: TelegramMessage) extends Serializer {
   val config: Config = ConfigFactory.load()
   val log = LoggerFactory.getLogger("TelegramManager")
 
+  val token = config.getString("telegram.token")
+  log.info(s"Token: $token")
+
   val httpReq = Marshal(message).to[RequestEntity].flatMap { entity =>
-    val request = HttpRequest(HttpMethods.POST, s"https://api.telegram.org//sendMessage", Nil, entity)
+    val request = HttpRequest(HttpMethods.POST, s"https://api.telegram.org/bot$token/sendMessage", Nil, entity)
     log.debug("Request: {}", request)
     Http().singleRequest(request)
   }

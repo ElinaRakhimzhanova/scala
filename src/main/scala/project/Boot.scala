@@ -1,6 +1,6 @@
 package project
 
-import project.model.{Author, Book}
+import project.model.{Author, Book, ErrorResponse, SuccessfulResponse}
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.http.scaladsl.Http
@@ -8,6 +8,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.Timeout
+import project.serializers.ElasticSerializer
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContextExecutor
 

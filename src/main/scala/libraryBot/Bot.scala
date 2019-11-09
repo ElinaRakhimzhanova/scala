@@ -7,7 +7,7 @@ import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.LoggerFactory
-import project.Serializer
+import project.serializers.Serializer
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}

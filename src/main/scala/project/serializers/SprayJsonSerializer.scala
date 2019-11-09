@@ -1,8 +1,7 @@
-package project
+package project.serializers
 
-import project.model.{Author, Book}
+import project.model.{Author, Book, ErrorResponse, SuccessfulResponse}
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
-
 
 trait SprayJsonSerializer extends DefaultJsonProtocol {
   implicit val authorFormat: RootJsonFormat[Author] = jsonFormat3(Author)
