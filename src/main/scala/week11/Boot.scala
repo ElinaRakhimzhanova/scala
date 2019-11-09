@@ -18,7 +18,7 @@ object Boot extends App {
 //    .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
 //    .build();
 
-  val credentials = new BasicAWSCredentials("AKIA34EMFK3II66NHUF3","BkmsSIfEJF2pvHRsF0cQ+1qcfNOGH72iDOaqNnRU")
+  val credentials = new BasicAWSCredentials("your access key","your secret key")
 
   val client = AmazonS3ClientBuilder.standard()
     .withCredentials(new AWSStaticCredentialsProvider(credentials))
