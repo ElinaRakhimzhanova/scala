@@ -1,6 +1,6 @@
 package project
 
-import project.model.{Author, Book, ErrorResponse, SuccessfulResponse}
+import project.model.{ Book, ErrorResponse, SuccessfulResponse}
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.http.scaladsl.Http

@@ -1,16 +1,12 @@
 package project
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, RequestEntity}
 import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.http.{HttpClient, RequestFailure, RequestSuccess}
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.http.index.CreateIndexResponse
-import libraryBot.Bot.log
 import libraryBot.TelegramMessage
-import project.model.{Author, Book, ErrorResponse, SuccessfulResponse}
+import project.model.{Book, ErrorResponse, SuccessfulResponse}
 import project.serializers.ElasticSerializer
 
 import scala.concurrent.ExecutionContext.Implicits.global
