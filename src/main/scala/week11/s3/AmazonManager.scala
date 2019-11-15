@@ -1,4 +1,4 @@
-package week11
+package week11.s3
 
 import java.io.{BufferedReader, File, InputStreamReader}
 
@@ -7,7 +7,8 @@ import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.{GetObjectRequest, ListObjectsV2Request, ObjectMetadata, PutObjectRequest}
-import collection.JavaConverters._
+
+import scala.collection.JavaConverters._
 
 object AmazonManager {
 
@@ -24,15 +25,13 @@ class AmazonManager extends Actor {
   import AmazonManager._
 
   val clientRegion = Regions.EU_CENTRAL_1
-
-  val credentials = new BasicAWSCredentials("AKIAT7O5CSXRKY3AP6WY", "Gxxv0UB87RkqKMKkF1Qx9ntomB9Cx9P+5J1Dm7nX")
+  val credentials = new BasicAWSCredentials("", "")
+  val bucketName = "kbtu-library"
 
   val client = AmazonS3ClientBuilder.standard()
     .withCredentials(new AWSStaticCredentialsProvider(credentials))
     .withRegion(clientRegion)
     .build();
-
-  val bucketName = "kbtu-library"
 
   def createBucket() = {
 
@@ -44,31 +43,31 @@ class AmazonManager extends Actor {
     }
   }
 
-  def listObjects() = {
-    val req = new ListObjectsV2Request().withBucketName(bucketName).withMaxKeys(2);
-    //    val result: ListObjectsV2Result
-
-    var flag = true
-
-    while (flag) {
-      val result = client.listObjectsV2(req)
-
-      result.getObjectSummaries().asScala.toList.foreach { objectSummary =>
-        printf(" - %s (size: %d)\n", objectSummary.getKey(), objectSummary.getSize());
-      }
-      // If there are more than maxKeys keys in the bucket, get a continuation token
-      // and list the next objects.
-      val token = result.getNextContinuationToken()
-      System.out.println("Next Continuation Token: " + token);
-      req.setContinuationToken(token)
-
-      if (!result.isTruncated) {
-        flag = false
-      }
-    }
-  }
-
-  //listObjects()
+//  def listObjects() = {
+//    val req = new ListObjectsV2Request().withBucketName(bucketName).withMaxKeys(2);
+//    //    val result: ListObjectsV2Result
+//
+//    var flag = true
+//
+//    while (flag) {
+//      val result = client.listObjectsV2(req)
+//
+//      result.getObjectSummaries().asScala.toList.foreach { objectSummary =>
+//        printf(" - %s (size: %d)\n", objectSummary.getKey(), objectSummary.getSize());
+//      }
+//      // If there are more than maxKeys keys in the bucket, get a continuation token
+//      // and list the next objects.
+//      val token = result.getNextContinuationToken()
+//      System.out.println("Next Continuation Token: " + token);
+//      req.setContinuationToken(token)
+//
+//      if (!result.isTruncated) {
+//        flag = false
+//      }
+//    }
+//  }
+//
+//  listObjects()
 
   def receive: Receive = {
 
@@ -86,8 +85,9 @@ class AmazonManager extends Actor {
       } while (str != null)
     }
 
-    case PostFile(objectKey: String, filename: String) => {
+    case PostFile(filename: String) => {
 
+      val objectKey
       // Upload a file as a new object with ContentType and title specified.
       val request = new PutObjectRequest(bucketName, objectKey, new File(filename))
 

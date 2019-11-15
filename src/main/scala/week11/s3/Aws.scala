@@ -1,15 +1,17 @@
-package week11
+package week11.s3
 
-import akka.http.scaladsl.Http
 import akka.actor.ActorSystem
-import akka.pattern.ask
-import akka.http.scaladsl.model.Uri.Path.Segment
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.Timeout
+import akka.pattern.ask
+
+import scala.concurrent.duration._
+
 import scala.concurrent.ExecutionContextExecutor
 
-object Aws extends App {
+object Aws extends App with Serializer {
 
   implicit val system: ActorSystem = ActorSystem("book-service")
   implicit val materializer: Materializer = ActorMaterializer()
@@ -28,24 +30,26 @@ object Aws extends App {
       }
     } ~
       pathPrefix("library") {
-        path("file" / Segment) { file =>
+        path("file") {
           get {
-            complete {
-              (amazonManager ? AmazonManager.GetFile(file)).mapTo[Either[ErrorResponse, SuccessfulResponse]]
+            parameters('fileName.as[String]) { path =>
+              complete {
+                (amazonManager ? AmazonManager.GetFile(path)).mapTo[Response]
+              }
             }
           }
         } ~
           path("file") {
-            post { file =>
+            post {
+              entity(as[Body]) { body =>
                 complete {
-                  (amazonManager ? AmazonManager.PostFile(file)).mapTo[Either[ErrorResponse, SuccessfulResponse]]
+                  (amazonManager ? AmazonManager.PostFile(body.path)).mapTo[Response]
                 }
               }
             }
           }
 
-        val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8080)
 
+        val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8080)
       }
 }
-

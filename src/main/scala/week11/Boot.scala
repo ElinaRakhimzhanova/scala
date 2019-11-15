@@ -1,7 +1,6 @@
 package week11
 
 import java.io.{BufferedReader, File, InputStreamReader}
-
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.regions.Regions
