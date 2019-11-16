@@ -1,29 +1,33 @@
 package week11.s3
 
 import java.io.{BufferedReader, File, InputStreamReader}
+
 import akka.actor.{Actor, ActorLogging, Props}
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.{GetObjectRequest, ListObjectsV2Request, ObjectMetadata, PutObjectRequest}
+import week11.s3.AmazonManagerForAll.{GetFiles, PostFiles}
+
 import scala.collection.JavaConverters._
 
-object AmazonManager {
 
-  case class GetFile(file: String)
+object AmazonManagerForAll {
 
-  case class PostFile(file : String)
+  case class GetFiles(file: String)
+
+  case class PostFiles(file : String)
 
   def props(client: AmazonS3, bucketName: String, objectKey: String): Props =
     Props(new AmazonManager(client: AmazonS3, bucketName: String, objectKey: String))
 
 }
 
-class AmazonManager(client: AmazonS3, bucketName: String, objectKey: String) extends Actor with ActorLogging {
+class AmazonManagerForAll(client: AmazonS3, bucketName: String, objectKey: String) extends Actor with ActorLogging {
 
   import AmazonManager._
 
   def receive: Receive = {
 
-    case GetFile(path: String) => {
+    case GetFiles(path: String) => {
 
       if (client.doesObjectExist(bucketName, objectKey + path)){
         log.info("Object exists")
@@ -32,17 +36,17 @@ class AmazonManager(client: AmazonS3, bucketName: String, objectKey: String) ext
         sender() ! Response(200, "File is downloaded")
       } else
         log.info("File is not downloaded")
-        sender() ! Response(400, "File is not downloaded")
+      sender() ! Response(400, "File is not downloaded")
     }
 
-    case PostFile(path: String) => {
-    //  if(existLocally(path)) {
-        createObject(path)
-        log.info("File is uploaded")
-        sender() ! Response(200, "File is uploaded")
-//      } else
-//        log.info("File is not uploaded")
-//        sender() ! Response(400, "File is not uploaded")
+    case PostFiles(path: String) => {
+      //  if(existLocally(path)) {
+      createObject(path)
+      log.info("File is uploaded")
+      sender() ! Response(200, "File is uploaded")
+      //      } else
+      //        log.info("File is not uploaded")
+      //        sender() ! Response(400, "File is not uploaded")
     }
   }
 
