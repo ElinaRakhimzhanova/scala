@@ -27,7 +27,7 @@ object Aws extends App with Serializer {
   val credentials = new BasicAWSCredentials("", "")
   val bucketName = "kbtu-library"
   val bucketNameforAll = "kbtu-library-for-all"
-  val objectKey = "src/main/resources/s3/"
+  val objectKey = "/"
 
   val client = AmazonS3ClientBuilder.standard()
     .withCredentials(new AWSStaticCredentialsProvider(credentials))
@@ -35,7 +35,7 @@ object Aws extends App with Serializer {
     .build();
 
   val amazonManager = system.actorOf(AmazonManager.props(client, bucketName, objectKey), "amazon-manager")
-  val amazonManagerForAll = system.actorOf(AmazonManagerForAll.props(), "amazon-manager-for-all")
+  //val amazonManagerForAll = system.actorOf(AmazonManagerForAll.props(), "amazon-manager-for-all")
 
   def createBucket() = {
 
@@ -75,23 +75,24 @@ object Aws extends App with Serializer {
                 }
               }
             }
-          } ~
-            path("out") {
-              get {
-                complete {
-                  amazonManagerForAll ? AmazonManagerForAll.GetFiles(path).mapTo[Response]
-                }
-              }
-            } ~
-              path("in") {
-                post {
-                  entity(as[Body]) { body =>
-                    complete {
-                      amazonManagerForAll ? AmazonManagerForAll.PostFiles(path).mapTo[Response]
-                    }
-                  }
-                }
-              }
+          }
+//          ~
+//            path("out") {
+//              get {
+//                complete {
+//                  amazonManagerForAll ? AmazonManagerForAll.GetFiles(path).mapTo[Response]
+//                }
+//              }
+//            } ~
+//              path("in") {
+//                post {
+//                  entity(as[Body]) { body =>
+//                    complete {
+//                      amazonManagerForAll ? AmazonManagerForAll.PostFiles(path).mapTo[Responce]
+//                    }
+//                  }
+//                }
+//              }
       }
 
   val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8080)

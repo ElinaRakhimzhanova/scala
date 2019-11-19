@@ -1,9 +1,11 @@
 package week11.s3
 
-import java.io.{BufferedReader, File, InputStreamReader}
+import java.io.{BufferedReader, BufferedWriter, File, FileWriter, InputStreamReader}
+
 import akka.actor.{Actor, ActorLogging, Props}
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.{GetObjectRequest, ListObjectsV2Request, ObjectMetadata, PutObjectRequest}
+
 import scala.collection.JavaConverters._
 
 object AmazonManager {
@@ -26,7 +28,7 @@ class AmazonManager(client: AmazonS3, bucketName: String, objectKey: String) ext
     case GetFile(path: String) => {
 
       if (client.doesObjectExist(bucketName, objectKey + path)){
-        log.info("Object exists")
+        log.info(s"path $path and $objectKey")
         getObject(objectKey + path)
         log.info("File is downloaded")
         sender() ! Response(200, "File is downloaded")
@@ -36,26 +38,25 @@ class AmazonManager(client: AmazonS3, bucketName: String, objectKey: String) ext
     }
 
     case PostFile(path: String) => {
-    //  if(existLocally(path)) {
         createObject(path)
         log.info("File is uploaded")
         sender() ! Response(200, "File is uploaded")
-//      } else
-//        log.info("File is not uploaded")
-//        sender() ! Response(400, "File is not uploaded")
     }
   }
 
-
-  def getObject(objectKey: String) = {
-    val fullObject = client.getObject(new GetObjectRequest(bucketName, objectKey))
+  def getObject(path: String) = {
+    val fullObject = client.getObject(new GetObjectRequest(bucketName, path))
     log.info("File is received")
     val objectStream = fullObject.getObjectContent
     val reader = new BufferedReader(new InputStreamReader(objectStream));
     var str: String = reader.readLine()
     do {
+      val writer = new BufferedWriter(new FileWriter(path))
+      writer.write(str)
       println(str)
       str = reader.readLine()
+      if(str == null) writer.close()
+      log.info(s"line $str")
     } while (str != null)
   }
 
@@ -68,7 +69,6 @@ class AmazonManager(client: AmazonS3, bucketName: String, objectKey: String) ext
       return false
     }
   }
-
   //  getObject("level-2")
 
   def createObject(path: String) {
@@ -86,7 +86,6 @@ class AmazonManager(client: AmazonS3, bucketName: String, objectKey: String) ext
     fileIsUploaded(bucketName, path)
 
   }
-
 
   //  createObject("my/long/path/temp.txt", "./src/main/resources/hello-kbtu.txt")
 
