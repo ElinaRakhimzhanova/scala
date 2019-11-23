@@ -85,3 +85,10 @@ project/plugins/project/
 *.log
 
 # End of https://www.gitignore.io/api/sbt,scala,intellij
+/src/main/resources/file/
+/src/main/resources/in/
+/src/main/resources/out/
+/src/main/resources/photos/
+/src/main/resources/s3/
+/src/main/resources/cat.jpeg
+/src/main/resources/hello-kbtu.txt

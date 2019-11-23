@@ -1,6 +1,6 @@
 package week11.s3
 
-import akka.actor.{ActorLogging, ActorSystem}
+import akka.actor.{ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
@@ -20,14 +20,15 @@ object Aws extends App with Serializer {
   implicit val system: ActorSystem = ActorSystem("book-service")
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val ec: ExecutionContextExecutor = system.dispatcher
-  implicit val timeout: Timeout = Timeout(10.seconds)
+  implicit val timeout: Timeout = Timeout(20.seconds)
 
   val log = LoggerFactory.getLogger("Aws")
   val clientRegion = Regions.EU_CENTRAL_1
   val credentials = new BasicAWSCredentials("", "")
   val bucketName = "kbtu-library"
   val bucketNameforAll = "kbtu-library-for-all"
-  val objectKey = "/"
+  val objectKey = "src/main/resources/s3/"
+  val objectKeyForAll = "src/main/resources/"
 
   val client = AmazonS3ClientBuilder.standard()
     .withCredentials(new AWSStaticCredentialsProvider(credentials))
@@ -35,9 +36,9 @@ object Aws extends App with Serializer {
     .build();
 
   val amazonManager = system.actorOf(AmazonManager.props(client, bucketName, objectKey), "amazon-manager")
-  //val amazonManagerForAll = system.actorOf(AmazonManagerForAll.props(), "amazon-manager-for-all")
+  val amazonManagerForAll = system.actorOf(AmazonManagerForAll.props(client, bucketNameforAll, objectKeyForAll), "amazon-manager-for-all")
 
-  def createBucket() = {
+  def createBucket(bucketName: String) = {
 
     if (!client.doesBucketExistV2(bucketName)) {
       client.createBucket(bucketName)
@@ -46,7 +47,7 @@ object Aws extends App with Serializer {
       println(s"Bucket location: $location")
     }
   }
-  createBucket()
+  createBucket(bucketNameforAll)
 
   val route =
     path("healthcheck") {
@@ -61,7 +62,6 @@ object Aws extends App with Serializer {
           get {
             parameters('filename.as[String]) { path =>
               complete {
-                log.info(s"path $path")
                 (amazonManager ? AmazonManager.GetFile(path)).mapTo[Response]
               }
             }
@@ -75,26 +75,24 @@ object Aws extends App with Serializer {
                 }
               }
             }
-          }
-//          ~
-//            path("out") {
-//              get {
-//                complete {
-//                  amazonManagerForAll ? AmazonManagerForAll.GetFiles(path).mapTo[Response]
-//                }
-//              }
-//            } ~
-//              path("in") {
-//                post {
-//                  entity(as[Body]) { body =>
-//                    complete {
-//                      amazonManagerForAll ? AmazonManagerForAll.PostFiles(path).mapTo[Responce]
-//                    }
-//                  }
-//                }
-//              }
+          } ~
+            pathPrefix("file") {
+              path("out") {
+                get {
+                  complete {
+                    (amazonManagerForAll ? AmazonManagerForAll.GetFiles()).mapTo[Response]
+                  }
+                }
+              } ~
+                path("in") {
+                  get {
+                    complete {
+                      (amazonManagerForAll ? AmazonManagerForAll.PostFiles()).mapTo[Response]
+                    }
+                  }
+                }
+            }
       }
 
   val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8080)
-
 }
