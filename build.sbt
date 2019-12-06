@@ -2,7 +2,7 @@ name := "bf-hello-world"
 
 version := "0.1"
 
-scalaVersion := "2.12.7"
+scalaVersion := "2.12.10"
 
 lazy val akkaVersion = "2.5.25"
 lazy val elastic4sVersion = "6.2.10"
@@ -18,8 +18,10 @@ libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
   "com.sksamuel.elastic4s" %% "elastic4s-http" % elastic4sVersion,
   "com.sksamuel.elastic4s" %% "elastic4s-json4s" % elastic4sVersion,
-  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+  "org.scalatest" %% "scalatest" % "3.0.8" % Test,
 
   // AWS SDK
   "com.amazonaws" % "aws-java-sdk-s3" % "1.11.670"
 )
+
+enablePlugins(JavaAppPackaging)

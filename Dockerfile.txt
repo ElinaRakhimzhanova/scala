@@ -1,0 +1,27 @@
+#
+# Scala and sbt Dockerfile
+#
+#
+# Pull base image OpenJDK
+FROM openjdk:8u232
+
+# copy configs
+# this is run inside docker image
+RUN mkdir -p /root/config/
+
+COPY ./src/main/resources/*logback.xml /root/config/
+COPY ./src/main/resources/*.conf /root/config/
+
+# cd /root
+WORKDIR /root
+COPY ./target/universal/bf-hello-world-0.1.zip /root/
+RUN unzip -q bf-hello-world-0.1.zip
+WORKDIR /root/bf-hello-world-0.1/bin
+
+# clean zip
+RUN rm /root/bf-hello-world-0.1.zip
+
+# make file executable
+CMD chmod +x bf-hello-world
+
+CMD ["/bin/bash", "-c", "./photo-service -Dconfig.file=/root/config/application.conf -Dlogback.configurationFile=/root/config/logback.xml"]

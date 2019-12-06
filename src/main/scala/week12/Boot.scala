@@ -2,17 +2,20 @@ package week12
 
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
+
 import akka.actor.ActorSystem
-import akka.pattern.ask
 import akka.http.scaladsl.Http
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.model.ContentTypes._
+import akka.http.scaladsl.model.MediaTypes._
+import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.pattern.ask
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.StreamConverters
+import akka.util.Timeout
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.s3.{AmazonS3, AmazonS3ClientBuilder}
-import akka.stream.scaladsl.StreamConverters
-import akka.util.Timeout
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -36,6 +39,8 @@ object Boot extends App with SprayJsonSerializer {
 
   createBucket(client, bucketName)
 
+  val worker = system.actorOf(PhotoActor.props(client, bucketName))
+
   val route =
     path("health") {
       get {
@@ -53,36 +58,38 @@ object Boot extends App with SprayJsonSerializer {
                   "all photos"
                 }
               },
-              post {
-                extractRequestContext { ctx =>
-                  fileUpload("file") {
-                    case (metadata, byteSource) =>
-                      // Convert Source[ByteSring, Any] => InputStream
-                      val inputStream: InputStream = byteSource.runWith(
-                        StreamConverters.asInputStream(FiniteDuration(3, TimeUnit.SECONDS))
-                      )
-
-                      log.info(s"Content type: ${metadata.contentType}")
-                      log.info(s"Fieldname: ${metadata.fieldName}")
-                      log.info(s"Filename: ${metadata.fileName}")
-
-                      val worker = system.actorOf(PhotoActor.props(client, bucketName))
-
-                      complete {
-                        (worker ? PhotoActor.UploadPhoto(inputStream, metadata.fileName, metadata.contentType.toString())).mapTo[SuccessfulResponse]
-                      }
-                  }
-                }
-              }
+//              post {
+//                extractRequestContext { ctx =>
+//                  fileUpload("file") {
+//                    case (metadata, byteSource) =>
+//                      // Convert Source[ByteSring, Any] => InputStream
+//                      val inputStream: InputStream = byteSource.runWith(
+//                        StreamConverters.asInputStream(FiniteDuration(3, TimeUnit.SECONDS))
+//                      )
+//
+//                      log.info(s"Content type: ${metadata.contentType}")
+//                      log.info(s"Fieldname: ${metadata.fieldName}")
+//                      log.info(s"Filename: ${metadata.fileName}")
+//
+//                      complete {
+//                        (worker ? PhotoActor.UploadPhoto(inputStream, metadata.fileName, metadata.contentType.toString())).mapTo[Either[ErrorResponse, SuccessfulResponse]])
+//                      }
+//                  }
+//                }
+//              }
             )
           },
             path(Segment) { photo =>
-              get {
-                val worker = system.actorOf(PhotoActor.props(client, bucketName))
-                  complete {
-                    (worker ? PhotoActor.DownloadPhoto(photo)).mapTo[SuccessfulResponse]
+              concat(
+                get {
+                  val future = (worker ? PhotoActor.DownloadPhoto(photo)).mapTo[Either[ErrorResponse, PhotoResponse]]
+
+                  onSuccess(future) {
+                    case Left(error) => complete(error.status, error.message)
+                    case Right(photo) => complete(photo.status, HttpEntity(ContentType(`image/jpeg`), photo.message))
                   }
-              }
+                }
+              )
             }
         )
       }
